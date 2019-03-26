@@ -1,0 +1,89 @@
+pipeline {
+  environment {
+    registry = "gloriapg/php"
+    registryCredential = 'dockerhub'
+    dockerImage = ''
+  }
+  agent any
+  stages {
+    stage('Cloning Git') {
+      steps {
+        git 'https://github.com/GloriaPG/php-example-docker.git'
+      }
+    }
+    stage('Building image') {
+      steps{
+        script {
+          dockerImage = docker.build registry + ":latest"
+        }
+      }
+    }
+    stage('Deploy Image') {
+      steps{
+        script {
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+    stage('Remove Unused docker image') {
+      steps{
+        sh "docker rmi $registry:latest"
+        sh "docker image prune -fa"
+      }
+    }
+  }
+}
+
+stage('Deploy to Openshift'){
+      /**
+       * This script demonstrates the usage of
+       * openshift.doAs and openshift.withCredentials
+       * This script assumes the following setup:
+       *  Environment:
+       *      username: userone
+       *          project: userone
+       *      username: usertwo
+       *          project: usertwo
+       *  And that the credentials are setup correctly
+       *  in Jenkins under the userone account
+       */
+      try {
+          timeout(time: 20, unit: 'MINUTES') {
+              // Select the default cluster
+              echo "Selecting the test cluster"
+              openshift.withCluster("test") {
+                  //Select the default user
+                  echo "Logging in as the default user admin using withCredentials"
+                  openshift.withCredentials('my-prilvileged-token-id') {
+                      // Select the pipeline-0 project
+                      try {
+                          echo "Selecting the pipeline-0 project"
+                          openshift.withProject("pipeline-0") {
+                              // Create a nodejs application
+                              // This should succeed
+                              echo "This should succeed"
+                              def existApp = openshift.raw('get pods -l app=php-test')
+                              if(existApp){
+                                openshift.raw('oc delete --all -l app=php-test')
+                                def result = openshift.newApp('--name php-test docker.io/gloriapg/php:latest')
+                                echo "status: ${result.out}"
+                              }else{
+                                def result = openshift.newApp('--name php-test docker.io/gloriapg/php:latest')
+                                echo "status: ${result.out}"
+                              }
+                              
+                          }
+                      } catch (err) {
+                          echo "in catch block"
+                          echo "Caught: ${err}"
+                      }
+                  }   
+              }
+          }
+      } catch (err) {
+          echo "in catch block"
+          echo "Caught: ${err}"
+      }
+    }
