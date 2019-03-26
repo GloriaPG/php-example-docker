@@ -1,4 +1,7 @@
-# Example Dockerfile PHP 7
+# Example Dockerfile PHP 7 and Jenkins Pipeline
+
+Basic app php and example Jenkins pipeline to build image from Docker file
+and deployment to Openshift.
 
 # How to build image?
 ```{r, engine='bash', count_lines}
