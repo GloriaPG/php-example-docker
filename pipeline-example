@@ -37,18 +37,6 @@ pipeline {
 }
 
 stage('Deploy to Openshift'){
-      /**
-       * This script demonstrates the usage of
-       * openshift.doAs and openshift.withCredentials
-       * This script assumes the following setup:
-       *  Environment:
-       *      username: userone
-       *          project: userone
-       *      username: usertwo
-       *          project: usertwo
-       *  And that the credentials are setup correctly
-       *  in Jenkins under the userone account
-       */
       try {
           timeout(time: 20, unit: 'MINUTES') {
               // Select the default cluster
